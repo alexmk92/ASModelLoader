@@ -3,11 +3,64 @@ using System.Runtime.InteropServices;
 
 namespace ASLoader.math
 {
+    /// <summary>
+    /// Represent a homogenous coordinate in the scope of this system
+    /// </summary>
     public class ASVECTOR4
     {
         // Could make a getter for these... in general the w component
         // is ignored, it only exists for satisfying matrix mult
         public double[] Points = new double[4];
+
+        // OPERATOR OVERLOADS
+
+        /// <summary>
+        /// Minus the components of vector A from vector B to get edge 3
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
+        public static ASVECTOR4 operator -(ASVECTOR4 v1, ASVECTOR4 v2)
+        {
+            var newVec = new ASVECTOR4(v1.Points[0] - v2.Points[0], v1.Points[1] - v2.Points[1],
+                                       v1.Points[2] - v2.Points[2]);
+            return newVec;
+        }
+
+        /// <summary>
+        /// Finds the cross product between two vectors (times rows by cols)
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
+        public static ASVECTOR4 operator *(ASVECTOR4 v1, ASVECTOR4 v2)
+        {
+            return new ASVECTOR4( v1.Points[1] * v2.Points[2] - v1.Points[2] * v2.Points[1],
+                                  v1.Points[2] * v2.Points[0] - v1.Points[0] * v2.Points[2],
+                                  v1.Points[0] * v2.Points[1] - v1.Points[1] * v2.Points[0]
+                                );
+        }
+
+        /// <summary>
+        /// Transform the matrix by a point
+        /// </summary>
+        /// <param name="m"></param>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public static ASVECTOR4 operator *(ASMATRIX4 m, ASVECTOR4 p)
+        {
+            var x = p.Points[0] * m.Matrix[0].Points[0] +
+                    p.Points[1] * m.Matrix[0].Points[1] +
+                    p.Points[2] * m.Matrix[0].Points[2];
+            var y = p.Points[0] * m.Matrix[1].Points[0] +
+                    p.Points[1] * m.Matrix[1].Points[1] +
+                    p.Points[2] * m.Matrix[1].Points[2];
+            var z = p.Points[0] * m.Matrix[2].Points[0] +
+                    p.Points[1] * m.Matrix[2].Points[1] +
+                    p.Points[2] * m.Matrix[2].Points[2];
+
+            return new ASVECTOR4(x, y, z, 1);
+        }
 
         /// <summary>
         /// Constructor for a new Vector 4
@@ -85,85 +138,6 @@ namespace ASLoader.math
         }
 
         /// <summary>
-        /// Finds the cross product between two vectors (times rows by cols)
-        /// </summary>
-        /// <param name="v"></param>
-        /// <returns></returns>
-        public ASVECTOR4 CrossProduct(ASVECTOR4 v)
-        {
-            return new ASVECTOR4(Points[1] * v.Points[2] - Points[2] * v.Points[1],
-                                 Points[2] * v.Points[0] - Points[0] * v.Points[2],
-                                 Points[0] * v.Points[1] - Points[1] * v.Points[0]
-                                );
-        }
-
-        /// <summary>
-        /// Gets the X angle between two vectors
-        /// </summary>
-        /// <returns></returns>
-        public double GetAngleX()
-        {
-            var vx = new ASVECTOR4(1, 0, 0);
-            double angle = ScalarProduct(vx) / GetMagnitude();
-            return Math.Acos(angle);
-        }
-
-        /// <summary>
-        /// Gets the Y angle between two vectors
-        /// </summary>
-        /// <param name="vecA"></param>
-        /// <returns></returns>
-        public double GetAngleY()
-        {
-            var vy = new ASVECTOR4(0, 1, 0);
-            double angle = ScalarProduct(vy) / GetMagnitude();
-            return Math.Acos(angle);
-        }
-
-        /// <summary>
-        /// Gets the Z angle between two vectors
-        /// </summary>
-        /// <returns></returns>
-        public double GetAngleZ()
-        {
-            var vz = new ASVECTOR4(0, 0, 1);
-            double angle = ScalarProduct(vz) / GetMagnitude();
-            return Math.Acos(angle);
-        }
-
-        /// <summary>
-        /// Gets the horizontal angle between two vectors
-        /// </summary>
-        /// <returns></returns>
-        public double GetHorizontalAngle()
-        {
-            // Catch the case where we have an invalid horizontal angle (x and y planes are at origin)
-            if (Math.Abs(Points[0]) <= 0 && Math.Abs(Points[1]) <= 0 && Math.Abs(Points[2]) > 0)
-                return 0;
-            // Calculate the horizontal angle
-            var normX = new ASVECTOR4(1, 0, 0);
-            var normZ = new ASVECTOR4(0, 0, 1);
-
-            var scalarX = ScalarProduct(normX);
-            var scalarZ = ScalarProduct(normZ);
-
-            var vecX = new ASVECTOR4(scalarX, 0, 0);
-            var vecZ = new ASVECTOR4(0, 0, scalarZ);
-
-            var vecXZ = new ASVECTOR4();
-
-            vecXZ.AddToVector(vecX);
-            vecXZ.AddToVector(vecZ);
-            vecXZ.Normalise();
-
-            var angle = Math.Acos(normZ.ScalarProduct(vecXZ));
-            if (vecX.Points[0] < 0)
-                return Math.PI * 2.0f - angle;
-
-            return angle;
-        }
-
-        /// <summary>
         /// Adds the x,y,z components of two vectors together
         /// </summary>
         /// <param name="vecB"></param>
@@ -230,67 +204,15 @@ namespace ASLoader.math
         /// <returns></returns>
         public ASVECTOR4 Normalise()
         {
-            return this.MultiplyVector(1.0 / GetMagnitude());
-        }
+            var len = GetMagnitude();
+            if (len.Equals(0.0d))
+                len = 1.0d;
 
-        /// <summary>
-        /// Rotate around the X Plane by a given deg
-        /// We have to do all of our multiplication before assigning, if we 
-        /// assigned to value z and y on the respective first two lines, then the
-        /// value would be changed before computing the next.
-        /// </summary>
-        /// <param name="deg"></param>
-        public void RotateX(double deg)
-        {
-            var newZ = (Points[2] * Math.Cos(deg) - Points[1] * Math.Sin(deg));
-            var newY = (Points[2] * Math.Sin(deg) + Points[1] * Math.Cos(deg));
+            this.Points[0] /= len;
+            this.Points[1] /= len;
+            this.Points[2] /= len;
 
-            Points[2] = newZ;
-            Points[1] = newY;
-        }
-
-        /// <summary>
-        /// Rotate around the Y plane by a given deg
-        /// </summary>
-        /// <param name="deg"></param>
-        public void RotateY(double deg)
-        {
-            var newX = (Points[0] * Math.Cos(deg) - Points[2] * Math.Sin(deg));
-            var newZ = (Points[0] * Math.Sin(deg) + Points[2] * Math.Cos(deg));
-
-            Points[0] = newX;
-            Points[2] = newZ;
-        }
-
-        /// <summary>
-        /// Rotate around the Z plane by a given deg
-        /// </summary>
-        /// <param name="deg"></param>
-        public void RotateZ(double deg)
-        {
-            var newX = (Points[0] * Math.Cos(deg) - Points[1] * Math.Sin(deg));
-            var newY = (Points[0] * Math.Sin(deg) + Points[1] * Math.Cos(deg));
-
-            Points[0] = newX;
-            Points[1] = newY;
-        }
-
-        /// <summary>
-        /// Rotates the mesh around some plane
-        /// </summary>
-        /// <param name="axis"></param>
-        /// <param name="deg"></param>
-        public void RotateAroundOrigin(ASVECTOR4 axis, double deg)
-        {
-            double xPlane = axis.GetHorizontalAngle();
-            double yPlane = axis.GetAngleY();
-
-            // Rotate the viewer about the X,Y plane to give the illusion of smooth rotation
-            RotateY(-xPlane);
-            RotateX(-yPlane);
-            RotateY(deg);
-            RotateX(yPlane);
-            RotateY(xPlane);
+            return this;
         }
 
         /// <summary>
@@ -299,19 +221,7 @@ namespace ASLoader.math
         /// <param name="m"></param>
         public ASVECTOR4 TransformVector(ASMATRIX4 m)
         {
-            var newPoint = new ASVECTOR4();
-
-            // Multiply the matrix by the vector
-            for (var col = 0; col < 4; col++)
-            {
-                double total = 0;
-                for (var row = 0; row < 4; row++)
-                    total = total + Points[row] * m.Matrix[col].Points[row];
-
-                newPoint.Points[col] = total;
-            }
-
-            return newPoint;
+            return m*this;
         }
 
         /// <summary>

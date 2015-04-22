@@ -30,7 +30,6 @@ namespace ASLoader
         /// </summary>
         private ASVECTOR4[] m_vertices;
         private ASFace[]    m_mesh;
-        private ASVECTOR4[] m_vNormals;
         private int[]       m_indices;
         private string      m_lastErr = "";
         private bool        m_isModelValid;
@@ -63,6 +62,8 @@ namespace ASLoader
         {
             var reader = new StreamReader(modelName);
 
+            if (reader == null) throw new NullReferenceException("reader");
+
             // If the model name wasn't valid then the application will crash
 
             // Get information about the mesh - we know the first line in the provided
@@ -86,16 +87,9 @@ namespace ASLoader
             if (!FillGeometryBuffer(reader))
                 return false;
 
-            // Populate the lighting buffer - if fail then break, the error is logged in the exception
-
-
-            // Populate the vertex normals buffer - if fail then break, the error is logged in the exception
-            if (!ComputeNormals())
-                return false;
-
             // Check that no error has been set, if it has (which is shouldn't) then something has gone
             // wrong, in which case we break out
-            if (m_lastErr == "" || String.IsNullOrEmpty(m_lastErr))
+            if (m_lastErr == "" || string.IsNullOrEmpty(m_lastErr))
                 return true;
 
             // Something went wrong - the model is not valid
@@ -108,8 +102,10 @@ namespace ASLoader
         /// </summary>
         /// <param name="reader">Pointer to the current stream reader</param>
         /// <returns>True if the array was populated, else false, also sets last error in exception</returns>
-        private bool FillVertexBuffer(StreamReader reader)
+        internal bool FillVertexBuffer(StreamReader reader)
         {
+            if (reader == null) throw new ArgumentNullException("reader");
+
             try
             {
                 // Loop numVertices times to build the vertex buffers
@@ -148,8 +144,10 @@ namespace ASLoader
         /// </summary>
         /// <param name="reader">Pointer to the current stream reader</param>
         /// <returns>True if the array was populated, else false, also sets last error in exception</returns>
-        private bool FillGeometryBuffer(StreamReader reader)
+        internal bool FillGeometryBuffer(StreamReader reader)
         {
+            if (reader == null) throw new ArgumentNullException("reader");
+
             try
             {
                 // Loop numVertices times to build the vertex buffers
@@ -189,24 +187,6 @@ namespace ASLoader
         }
 
         /// <summary>
-        /// Compute the normals for the model, these will be used for lighting
-        /// calculations. 
-        /// </summary>
-        /// <returns>True if the normals were computed, else returns false</returns>
-        private bool ComputeNormals()
-        {
-            try
-            {
-                return true;
-            }
-            catch (Exception e)
-            {
-                m_lastErr = e.ToString();
-                return false;
-            }
-        }
-
-        /// <summary>
         /// Builds a Dictionary holding all information about the model, this will allow
         /// us to access its context from other areas in the application.
         /// </summary>
@@ -229,7 +209,6 @@ namespace ASLoader
             meshData.Add("response", "The model was generated successfully, it has " + m_numFaces + " faces, and " + m_numVertices + " vertices.");
             meshData.Add("vertices", m_vertices);
             meshData.Add("indices", m_indices);
-            meshData.Add("normals", m_vNormals);
             meshData.Add("faces", m_mesh);
             meshData.Add("numVertices", m_numVertices);
             meshData.Add("numIndices", m_numIndices);

@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ASLight.cs" />
     <Compile Include="ASMesh.cs" />
     <Compile Include="ASModels.cs" />
     <Compile Include="ASRenderer.cs" />
@@ -55,8 +56,6 @@
     </Compile>
     <Compile Include="math\ASFace.cs" />
     <Compile Include="math\ASMatrix4.cs" />
-    <Compile Include="math\ASVector2.cs" />
-    <Compile Include="math\ASVector3.cs" />
     <Compile Include="math\ASVector4.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -72,6 +71,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="ClassDiagram1.cd" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

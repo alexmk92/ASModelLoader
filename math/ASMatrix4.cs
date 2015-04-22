@@ -17,6 +17,33 @@ namespace ASLoader.math
         // 
         public ASVECTOR4[] Matrix = new ASVECTOR4[4];
 
+
+        /// <summary>
+        /// Multiply two matrices together to get the cross product
+        /// </summary>
+        /// <param name="mA"></param>
+        /// <param name="mB"></param>
+        /// <returns></returns>
+        public static ASMATRIX4 operator *(ASMATRIX4 mA, ASMATRIX4 mB)
+        {
+            //  Creates a new zeroed output matrix
+            var m = new ASMATRIX4();
+            
+            // Multiply the two matrixes together and return the output matrix
+            for (var i = 0; i < 4; i++)
+            {
+                for (var j = 0; j < 4; j++)
+                {
+                    m.Matrix[i].Points[j] =
+                        (mB.Matrix[i].Points[0]*mA.Matrix[0].Points[j]) +
+                        (mB.Matrix[i].Points[1]*mA.Matrix[1].Points[j]) +
+                        (mB.Matrix[i].Points[2]*mA.Matrix[2].Points[j]) +
+                        (mB.Matrix[i].Points[3]*mA.Matrix[3].Points[j]);
+                }
+            }
+            return m;
+        }
+
         /// <summary>
         /// Default constructor for an ASMATRIX, will create it as
         /// an identity matrix.
@@ -24,6 +51,21 @@ namespace ASLoader.math
         public ASMATRIX4()
         {
             CreateIdentityMatrix();
+        }
+
+        /// <summary>
+        /// Create a matrix given 4 vectors
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <param name="v3"></param>
+        /// <param name="v4"></param>
+        public ASMATRIX4(ASVECTOR4 v1, ASVECTOR4 v2, ASVECTOR4 v3, ASVECTOR4 v4)
+        {
+            Matrix[0] = v1;
+            Matrix[1] = v2;
+            Matrix[2] = v3;
+            Matrix[3] = v4;
         }
 
         /// <summary>
@@ -39,18 +81,29 @@ namespace ASLoader.math
         }
 
         /// <summary>
+        /// Zeroes out the matrices
+        /// </summary>
+        public void ZeroMatrix()
+        {
+            for (int i = 0; i < 4; i++)
+                Matrix[i].ZeroVector();
+        }
+
+        /// <summary>
         /// Creates a new 4x4 perspective matrix
         /// </summary>
         /// <param name="focalLength"></param>
         /// <returns></returns>
-        public void CreatePerspectiveMatrix(double focalLength)
+        public static ASMATRIX4 CreatePerspectiveMatrix(double focalLength)
         {
             // Reset the matrix to an identity matrix
-            CreateIdentityMatrix();
+            var m = new ASMATRIX4();
 
             // Create the perspective matrix
-            Matrix[3].Points[2] = 1 / focalLength;
-            Matrix[3].Points[3] = 1;
+            m.Matrix[3].Points[2] = 1 / focalLength;
+            m.Matrix[3].Points[3] = 0;
+            
+            return m;
         }
 
         /// <summary>
@@ -60,15 +113,17 @@ namespace ASLoader.math
         /// <param name="y"></param>
         /// <param name="z"></param>
         /// <returns></returns>
-        public void CreateTranslationMatrix(double x, double y, double z)
+        public static ASMATRIX4 CreateTranslationMatrix(double x, double y, double z)
         {
             // reset to identity matrix
-            CreateIdentityMatrix();
+            var m = new ASMATRIX4();
 
             // Set the translation matrix
-            Matrix[0].Points[3] = x;
-            Matrix[1].Points[3] = y;
-            Matrix[2].Points[3] = z;
+            m.Matrix[0].Points[3] = x;
+            m.Matrix[1].Points[3] = y;
+            m.Matrix[2].Points[3] = z;
+
+            return m;
         }
 
         /// <summary>
@@ -78,55 +133,140 @@ namespace ASLoader.math
         /// <param name="y"></param>
         /// <param name="z"></param>
         /// <returns></returns>
-        public void CreateScalingMatrix(double x, double y, double z)
+        public static ASMATRIX4 CreateScalingMatrix(double x, double y, double z)
         {
-            // Reset to identity matrix
-            CreateIdentityMatrix();
+            // Zero the matrix
+            var m = new ASMATRIX4();
 
-            Matrix[0].Points[0] = x;
-            Matrix[1].Points[1] = y;
-            Matrix[2].Points[2] = z;
-            Matrix[3].Points[3] = 1;
-        }
+            // Scale the matrix
+            m.Matrix[0].Points[0] = x;
+            m.Matrix[1].Points[1] = y;
+            m.Matrix[2].Points[2] = z;
 
-        public void CreateRotationMatrix(double x, double y, double z)
-        {
-        
+            return m;
         }
 
         /// <summary>
-        /// Multiply two matrixes together.
+        /// Creates a rotation matrix around the X origin, given the angle
+        /// in degree
         /// </summary>
-        /// <param name="m"></param>
+        /// <param name="radians"></param>
+        private static ASMATRIX4 CreateRotationAroundX(double radians)
+        {
+            // See if the angle is valid, if not set default
+            CheckAngle(radians, out radians);
+
+            // Zero the Matrix
+            var m = new ASMATRIX4();
+
+            // Create the X Rotation Matrix
+            m.Matrix[1].Points[1] = Math.Cos(radians);
+            m.Matrix[1].Points[2] = Math.Sin(radians);
+            m.Matrix[2].Points[1] = -(Math.Sin(radians));
+            m.Matrix[2].Points[2] = Math.Cos(radians);
+
+            return m;
+        }
+
+        /// <summary>
+        /// Creates a rotation matrix around the Y origin, given the angle
+        /// in degree
+        /// </summary>
+        /// <param name="radians"></param>
+        private static ASMATRIX4 CreateRotationAroundY(double radians)
+        {
+            // See if the angle is valid, if not set default
+            CheckAngle(radians, out radians);
+
+            // Zero the Matrix
+            var m = new ASMATRIX4();
+
+            // Create the Y Rotation Matrix
+            m.Matrix[0].Points[0] = Math.Cos(radians);
+            m.Matrix[0].Points[2] = -(Math.Sin(radians));
+            m.Matrix[2].Points[0] = Math.Sin(radians);
+            m.Matrix[2].Points[2] = Math.Cos(radians);
+
+            return m;
+        }
+
+        /// <summary>
+        /// Creates a rotation matrix around the Z origin, given the angle
+        /// in degree
+        /// </summary>
+        /// <param name="radians"></param>
+        private static ASMATRIX4 CreateRotationAroundZ(double radians)
+        {
+            // See if the angle is valid, if not set default
+            CheckAngle(radians, out radians);
+
+            // Zero the Matrix
+            var m = new ASMATRIX4();
+
+            // Create the X Rotation Matrix
+            m.Matrix[0].Points[0] = Math.Cos(radians);
+            m.Matrix[0].Points[1] = Math.Sin(radians);
+            m.Matrix[1].Points[0] = -(Math.Sin(radians));
+            m.Matrix[1].Points[1] = Math.Cos(radians);
+
+            return m;
+        }
+
+        /// <summary>
+        /// Converts degrees to radians so we can ensure we rotate by the correct amount, this is because
+        /// the sliders on the GUI are in Degrees (0-360) and not radians
+        /// </summary>
+        /// <param name="degrees"></param>
         /// <returns></returns>
-        public ASMATRIX4 MultiplyMatrix(ASMATRIX4 m)
-        { 
-            ASMATRIX4 newMatrix = new ASMATRIX4();
-            newMatrix.Matrix[0] = new ASVECTOR4(
-                    Matrix[0].Points[0] * m.Matrix[0].Points[0] + Matrix[0].Points[1] * m.Matrix[0].Points[0] + Matrix[0].Points[2] * m.Matrix[0].Points[0] + Matrix[0].Points[3] * m.Matrix[0].Points[0],
-                    Matrix[0].Points[0] * m.Matrix[0].Points[1] + Matrix[0].Points[1] * m.Matrix[0].Points[1] + Matrix[0].Points[2] * m.Matrix[0].Points[1] + Matrix[0].Points[3] * m.Matrix[0].Points[1],
-                    Matrix[0].Points[0] * m.Matrix[0].Points[2] + Matrix[0].Points[1] * m.Matrix[0].Points[2] + Matrix[0].Points[2] * m.Matrix[0].Points[2] + Matrix[0].Points[3] * m.Matrix[0].Points[2],
-                    Matrix[0].Points[0] * m.Matrix[0].Points[3] + Matrix[0].Points[1] * m.Matrix[0].Points[3] + Matrix[0].Points[2] * m.Matrix[0].Points[3] + Matrix[0].Points[3] * m.Matrix[0].Points[3]
-            );
-            newMatrix.Matrix[1] = new ASVECTOR4(
-                    Matrix[1].Points[0] * m.Matrix[0].Points[0] + Matrix[1].Points[1] * m.Matrix[0].Points[0] + Matrix[1].Points[2] * m.Matrix[0].Points[0] + Matrix[1].Points[3] * m.Matrix[0].Points[0],
-                    Matrix[1].Points[0] * m.Matrix[0].Points[1] + Matrix[1].Points[1] * m.Matrix[0].Points[1] + Matrix[1].Points[2] * m.Matrix[0].Points[1] + Matrix[1].Points[3] * m.Matrix[0].Points[1],
-                    Matrix[1].Points[0] * m.Matrix[0].Points[2] + Matrix[1].Points[1] * m.Matrix[0].Points[2] + Matrix[1].Points[2] * m.Matrix[0].Points[2] + Matrix[1].Points[3] * m.Matrix[0].Points[2],
-                    Matrix[1].Points[0] * m.Matrix[0].Points[3] + Matrix[1].Points[1] * m.Matrix[0].Points[3] + Matrix[1].Points[2] * m.Matrix[0].Points[3] + Matrix[1].Points[3] * m.Matrix[0].Points[3]
-            );
-            newMatrix.Matrix[2] = new ASVECTOR4(
-                    Matrix[2].Points[0] * m.Matrix[0].Points[0] + Matrix[2].Points[1] * m.Matrix[0].Points[0] + Matrix[2].Points[2] * m.Matrix[0].Points[0] + Matrix[2].Points[3] * m.Matrix[0].Points[0],
-                    Matrix[2].Points[0] * m.Matrix[0].Points[1] + Matrix[2].Points[1] * m.Matrix[0].Points[1] + Matrix[2].Points[2] * m.Matrix[0].Points[1] + Matrix[2].Points[3] * m.Matrix[0].Points[1],
-                    Matrix[2].Points[0] * m.Matrix[0].Points[2] + Matrix[2].Points[1] * m.Matrix[0].Points[2] + Matrix[2].Points[2] * m.Matrix[0].Points[2] + Matrix[2].Points[3] * m.Matrix[0].Points[2],
-                    Matrix[2].Points[0] * m.Matrix[0].Points[3] + Matrix[2].Points[1] * m.Matrix[0].Points[3] + Matrix[2].Points[2] * m.Matrix[0].Points[3] + Matrix[2].Points[3] * m.Matrix[0].Points[3]
-            );
-            newMatrix.Matrix[3] = new ASVECTOR4(
-                    Matrix[3].Points[0] * m.Matrix[0].Points[0] + Matrix[3].Points[1] * m.Matrix[0].Points[0] + Matrix[3].Points[2] * m.Matrix[0].Points[0] + Matrix[3].Points[3] * m.Matrix[0].Points[0],
-                    Matrix[3].Points[0] * m.Matrix[0].Points[1] + Matrix[3].Points[1] * m.Matrix[0].Points[1] + Matrix[3].Points[2] * m.Matrix[0].Points[1] + Matrix[3].Points[3] * m.Matrix[0].Points[1],
-                    Matrix[3].Points[0] * m.Matrix[0].Points[2] + Matrix[3].Points[1] * m.Matrix[0].Points[2] + Matrix[3].Points[2] * m.Matrix[0].Points[2] + Matrix[3].Points[3] * m.Matrix[0].Points[2],
-                    Matrix[3].Points[0] * m.Matrix[0].Points[3] + Matrix[3].Points[1] * m.Matrix[0].Points[3] + Matrix[3].Points[2] * m.Matrix[0].Points[3] + Matrix[3].Points[3] * m.Matrix[0].Points[3]
-            );
-            return newMatrix;
+        public static double ConvertDegressToRadians(double degrees)
+        {
+            return (Math.PI/180)*degrees;
+        }
+
+        /// <summary>
+        /// Creates a rotation matrix using the rotation methods - this is a private interface
+        /// as we access it via the RotateByDegrees method
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <returns></returns>
+        private static ASMATRIX4 CreateRotation(double x, double y, double z)
+        {
+            var m = CreateRotationAroundX(x);
+            m = m*CreateRotationAroundY(y);
+            m = m*CreateRotationAroundZ(z);
+
+            return m;
+        }
+
+        /// <summary>
+        /// Public interface to create a new rotation matrix, this has default parameters of 
+        /// 0 in the event that no parameters are passed (shoudln't happen)
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <returns></returns>
+        public static ASMATRIX4 RotateByDegrees(double x = 0, double y = 0, double z = 0)
+        {
+            return CreateRotation(ConvertDegressToRadians(x), ConvertDegressToRadians(y), ConvertDegressToRadians(z));
+        }
+
+        /// <summary>
+        /// Simple method to check if we have a valid angle, given an 
+        /// input and output parameter, we see if the angle is within the range 0 - 360
+        /// if not we return default values, else return the angle
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="angle"></param>
+        public static void CheckAngle(double input, out double angle)
+        {
+            if (input > 360)
+                angle = 0;
+            if (input < 0)
+                angle = 360;
+            angle = input;
         }
 
         /// <summary>

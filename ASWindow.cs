@@ -17,11 +17,16 @@ namespace ASLoader
     {
         // Directory to the models folder, we only take a name from the select box to
         // process the model to load
-        private const string    MODEL_DIR = "../../models/";
-        private string m_currModel = MODEL_DIR + ASModels.CUBE + ".txt";
+        private const string MODEL_DIR = "../../models/";
+        private string m_currModel = MODEL_DIR + ASModels.TIGER + ".txt";
+        private double m_scaleFactor = 1;
+        private int m_originX;
+        private bool m_showPoints;
+        private bool m_colorPolys;
+        private int m_originY;
         private bool m_hasBeenDrawn = false;
-        private ASRenderer      m_renderer;
-        private ASMesh          m_model;
+        private ASRenderer m_renderer;
+        private ASMesh m_model;
         private Dictionary<string, int> m_worldInfo;
 
         /// <summary>
@@ -65,11 +70,14 @@ namespace ASLoader
         /// </summary>
         private void SetWorldInfo()
         {
-            m_worldInfo["focal"]      = focal.Value;
-            m_worldInfo["scale"]      = scale.Value;
-            m_worldInfo["translateX"] = translateX.Value;
-            m_worldInfo["translateY"] = translateY.Value;
-            m_worldInfo["translateZ"] = translateZ.Value;
+            m_worldInfo["focal"]       = focal.Value;
+            m_worldInfo["scale"]       = scale.Value;
+            m_worldInfo["translateX"]  = translateX.Value;
+            m_worldInfo["translateY"]  = translateY.Value;
+            m_worldInfo["translateZ"]  = translateZ.Value;
+            m_worldInfo["rotateX"]     = rotateX.Value;
+            m_worldInfo["rotateY"]     = rotateY.Value;
+            m_worldInfo["rotateZ"]     = rotateZ.Value;
 
             canvas.Refresh();
         }
@@ -97,20 +105,28 @@ namespace ASLoader
             { 
                 case "Teapot":
                     m_currModel = MODEL_DIR + ASModels.TEAPOT + ".txt";
+                    m_scaleFactor = 0.008;
                     break;
                 case "Tiger":
                     m_currModel = MODEL_DIR + ASModels.TIGER + ".txt";
+                    m_scaleFactor = 1;
                     break;
                 case "T-Rex":
                     m_currModel = MODEL_DIR + ASModels.T_REX + ".txt";
+                    m_scaleFactor = 1.5;
                     break;
                 case "Dolphin":
                     m_currModel = MODEL_DIR + ASModels.DOLPHIN + ".txt";
+                    m_scaleFactor = 0.0075;
                     break;
                 case "Cube":
                     m_currModel = MODEL_DIR + ASModels.CUBE + ".txt";
+                    m_scaleFactor = 0.0075;
                     break;
             }
+
+            m_originX = originX.Value;
+            m_originY = originY.Value;
 
             m_hasBeenDrawn = false;
             SetWorldInfo();
@@ -132,7 +148,7 @@ namespace ASLoader
             m_model = new ASMesh(m_currModel);
 
             // Update the renderer and then reload the canvas
-            m_renderer.SetWorldInfo(m_worldInfo);
+            m_renderer.SetWorldInfo(m_worldInfo, m_originX, m_originY, m_scaleFactor, m_showPoints);
             m_renderer.SetMeshData(m_model.GetMeshData());
 
             UpdateLabels();
@@ -156,6 +172,89 @@ namespace ASLoader
          ************************************************************/
         private void btnDraw_Click(object sender, EventArgs e)
         {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void translateZ_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void translateY_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void translateX_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void scale_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void focal_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void rotateX_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void rotateY_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void rotateZ_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            m_showPoints = !m_showPoints;
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void colourPolys_Click(object sender, EventArgs e)
+        {
+            m_renderer.m_colorPolys = m_renderer.m_colorPolys == true ? false : true;
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void btnHiddenRemoval_Click(object sender, EventArgs e)
+        {
+            m_renderer.m_computeNormals = m_renderer.m_computeNormals == true ? false : true;
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void originX_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_originX = originX.Value;
+            m_hasBeenDrawn = false;
+            SetWorldInfo();
+        }
+
+        private void originY_Scroll(object sender, ScrollEventArgs e)
+        {
+            m_originY = originY.Value;
             m_hasBeenDrawn = false;
             SetWorldInfo();
         }
